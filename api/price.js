@@ -1,29 +1,47 @@
-export default async function handler(req, res) {
 
-  const item = req.query.item;
-  if (!item) return res.status(400).json({ error: "No item" });
+export default async function handler(request, response) {
 
-  const url =
-    "https://www.ebay.co.uk/sch/i.html?_nkw=" +
-    encodeURIComponent(item) +
-    "&LH_Sold=1&LH_Complete=1";
+  const { item } = request.query;
 
-  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
-  const html = await r.text();
+  if (!item) {
+    response.status(400).json({ error: "No item provided" });
+    return;
+  }
 
-  const prices = [...html.matchAll(/£([0-9]+\.[0-9]+)/g)]
-    .map(m => parseFloat(m[1]))
-    .filter(p => p > 2 && p < 2000);
+  try {
+    const url =
+      "https://www.ebay.co.uk/sch/i.html?_nkw=" +
+      encodeURIComponent(item) +
+      "&LH_Sold=1&LH_Complete=1";
 
-  if (!prices.length) return res.json({ error: "No sold data found" });
+    const r = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" }
+    });
 
-  const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
+    const html = await r.text();
 
-  res.json({
-    average: avg.toFixed(2),
-    quick: (avg*0.75).toFixed(2),
-    normal: (avg*0.95).toFixed(2),
-    max: (avg*1.2).toFixed(2),
-    samples: prices.length
-  });
+    const matches = html.match(/£[0-9,.]+/g) || [];
+
+    const prices = matches
+      .map(p => parseFloat(p.replace("£","").replace(",","")))
+      .filter(p => p > 2 && p < 2000);
+
+    if (!prices.length) {
+      response.json({ error: "No sold listings found" });
+      return;
+    }
+
+    const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
+
+    response.json({
+      average: avg.toFixed(2),
+      quick: (avg*0.75).toFixed(2),
+      normal: (avg*0.95).toFixed(2),
+      max: (avg*1.2).toFixed(2),
+      samples: prices.length
+    });
+
+  } catch (err) {
+    response.status(500).json({ error: "Pricing engine failed" });
+  }
 }
