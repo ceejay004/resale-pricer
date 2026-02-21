@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resale Price Checker</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4f8;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 15px;
+    }
+    h1 {
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: #16a34a;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .price {
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Resale Price Checker</h1>
+
+<div class="card">
+  <input id="item" placeholder="Enter item name..." />
+  <button onclick="calculate()">Check Price</button>
+</div>
+
+<div id="results"></div>
+
+<script>
+function calculate() {
+  const item = document.getElementById("item").value;
+  if (!item) return;
+
+  const avg = Math.max(10, Math.min(300, item.length * 4));
+
+  const quick = (avg * 0.75).toFixed(2);
+  const normal = (avg * 0.95).toFixed(2);
+  const max = (avg * 1.2).toFixed(2);
+
+  document.getElementById("results").innerHTML = `
+    <div class="card"><div>Average Used</div><div class="price">£${avg.toFixed(2)}</div></div>
+    <div class="card"><div>Quick Sale</div><div class="price">£${quick}</div></div>
+    <div class="card"><div>Normal Sale</div><div class="price">£${normal}</div></div>
+    <div class="card"><div>Max Price</div><div class="price">£${max}</div></div>
+  `;
+}
+</script>
+
+</body>
+</html>
