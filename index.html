@@ -1,24 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resale Profit Calculator</title>
+
+<style>
+body{font-family:Arial;background:#f4f6f9;padding:18px}
+h2{text-align:center}
+.card{background:white;padding:16px;border-radius:12px;margin-bottom:14px;box-shadow:0 3px 8px rgba(0,0,0,.08)}
+input,textarea,button{width:100%;padding:12px;border-radius:10px;margin-top:8px;font-size:16px}
+button{background:#16a34a;color:white;border:none;font-weight:bold}
+textarea{height:110px}
+.result{font-size:20px;font-weight:bold;text-align:center;margin-top:10px}
+.good{color:#16a34a}
+.ok{color:#ca8a04}
+.bad{color:#dc2626}
+.small{font-size:13px;color:#666;margin-top:6px}
+</style>
+</head>
+
+<body>
+
+<h2>Resale Profit Intelligence</h2>
+
+<div class="card">
+<b>1. Paste eBay Sold Prices</b>
+<textarea id="prices" placeholder="Example:
+39.99
+42
+37.50
+45"></textarea>
+</div>
+
+<div class="card">
+<b>2. Your Costs</b>
+
+<label>Buying Cost (£)</label>
+<input id="buyCost" type="number" placeholder="Example: 20">
+
+<label>Postage (£)</label>
+<input id="postage" type="number" placeholder="Example: 4.50">
+
+<label>eBay Fee % (Typical 12.8)</label>
+<input id="feePercent" type="number" value="12.8">
+
+<label>Payment Processing % (Typical 2.9)</label>
+<input id="paymentPercent" type="number" value="2.9">
+
+<button onclick="calculate()">Calculate Profit</button>
+
+<div class="small">Tip: Adjust fee % if category differs</div>
+</div>
+
+<div id="result"></div>
+
 <script>
-async function calculate() {
-  const item = document.getElementById("item").value;
-  if (!item) return;
+function calculate(){
 
-  document.getElementById("results").innerHTML =
-    "<div class='card'>Checking real sold prices...</div>";
+const lines=document.getElementById('prices').value.split(/\n/);
 
-  const r = await fetch("/api/price?item=" + encodeURIComponent(item));
-  const data = await r.json();
+const nums=lines
+.map(v=>parseFloat(v.replace(/[^\d.]/g,'')))
+.filter(v=>!isNaN(v));
 
-  if (data.error) {
-    document.getElementById("results").innerHTML =
-      "<div class='card'>No sold listings found</div>";
-    return;
-  }
-
-  document.getElementById("results").innerHTML = `
-    <div class="card"><div>Average Used (${data.samples} sales)</div><div class="price">£${data.average}</div></div>
-    <div class="card"><div>Quick Sale</div><div class="price">£${data.quick}</div></div>
-    <div class="card"><div>Normal Sale</div><div class="price">£${data.normal}</div></div>
-    <div class="card"><div>Max Price</div><div class="price">£${data.max}</div></div>
-  `;
+if(nums.length<2){
+alert("Paste at least 2 prices");
+return;
 }
+
+const avg=nums.reduce((a,b)=>a+b,0)/nums.length;
+
+const buy=parseFloat(document.getElementById('buyCost').value)||0;
+const postage=parseFloat(document.getElementById('postage').value)||0;
+const feeP=parseFloat(document.getElementById('feePercent').value)||0;
+const payP=parseFloat(document.getElementById('paymentPercent').value)||0;
+
+const feeAmount=avg*(feeP/100);
+const payAmount=avg*(payP/100);
+
+const totalFees=feeAmount+payAmount;
+
+const net=avg-totalFees-postage-buy;
+
+const roi=((net/buy)*100)||0;
+
+let verdict="OK";
+let color="ok";
+
+if(net>30){verdict="STRONG PROFIT";color="good";}
+if(net>10 && net<=30){verdict="PROFITABLE";color="good";}
+if(net>0 && net<=10){verdict="LOW PROFIT";color="ok";}
+if(net<=0){verdict="LOSS";color="bad";}
+
+document.getElementById('result').innerHTML=`
+<div class="card">Detected Average Sale: £${avg.toFixed(2)}</div>
+<div class="card">Total Fees: £${totalFees.toFixed(2)}</div>
+<div class="card">Net Profit: £${net.toFixed(2)}</div>
+<div class="card">ROI: ${roi.toFixed(1)}%</div>
+<div class="card result ${color}">${verdict}</div>
+`;
+}
+</script>
+
+</body>
+</html>
